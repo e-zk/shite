@@ -1,0 +1,75 @@
+#!/bin/sh
+
+#
+# common variables
+#
+
+# site metadata
+fqdn=zakaria.org
+base_url="https://${fqdn}"
+onion_url="http://g5hwwozzm3co43bu6np2noyhsju7zuok3cqawlbeo4entvfoads5trqd.onion/"
+site_name="zakaria's web log"
+
+# paths
+posts_dir="${HOME}/usr/src/www/blog/posts"
+posts_index=${posts_dir}/index.html
+
+# options for lowdown
+lowdown_opts='--html-no-escapehtml --html-no-skiphtml'
+
+# feed location
+rss_feed=rss.xml
+
+
+#
+# common functions
+#
+
+# log to stderr
+log() {
+	printf '%s: %s\n' "$(basename $0)" "$1" >&2
+}
+
+# ded af
+die() {
+	log "$1"
+	exit 1
+}
+
+# is $1 in the list of excluded files?
+is_excluded() {
+	case "$1" in
+		index.*) return 0 ;;
+		*)       return 1 ;;
+	esac
+	return 1
+}
+
+# run lowdown on some input
+# $1 - markdown input
+run_lowdown() {
+	echo "$@" | lowdown -Thtml ${lowdown_opts}
+}
+
+# separate a filename into parsable chunks (date:title)
+# $1 - filename (basename)
+parse_fname() {
+	echo "$1" | \
+	sed 's/\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\)-\(.*\)\..*/\1:\2/g'
+}
+
+# get title from markdown file
+# $1 - markdown file (path)
+md_title() {
+	head -n 1 "$1" | sed 's/#\ \(.*\)/\1/g'
+}
+
+# convert markdown to plaintext:
+# remove code, links, use image alt-text
+# input is stdin
+md_to_txt() {
+	sed -E \
+		-e 's/`//g' \
+		-e 's/!\[(.+)\]\(.+\)/\[img "\1"\]/g' \
+	        -e 's/\[(.+)\]\(.+\)/\1/g'
+}
