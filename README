@@ -1,0 +1,36 @@
+ shite 
+=======
+
+/bin/sh site generator tools
+
+
+ About 
+-------
+
+This is the successor to the shlog[^1] project, separating each of its
+main functions into serveral scripts:
+
+ * common.rc - houses common script functions and variables  
+ * rss.sh    - rss feed generation  
+ * update.sh - convert new posts from markdown -> html  
+ * index.sh  - generate post index (list of posts in chronological order)  
+
+The main difference between these scripts and shlog is that these scripts
+are easier for _me_ to maintain without worrying about Linux compat,
+OS-specific edge cases, etc.
+
+These scripts have been tested on the latest OpenBSD-current and nothing else.
+
+
+ Usage 
+-------
+
+ 1. Configure file locations, site url and name in common.rc
+ 2. Run update.sh to 'compile' markdown posts
+ 3. Run index.sh to generate the post index page 
+ 4. Run rss.sh to update the post rss feed
+
+----
+
+[^1]: https://github.com/e-zk/shlog
+
