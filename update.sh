@@ -51,9 +51,7 @@ gen_nav() {
 	printf '<nav>\n'
 	printf '<a href="%s">%s</a>\n' "/" "$fqdn"
 	printf '<span class="right">\n'
-	printf '<a href="/posts/">blog</a>&nbsp;&nbsp;\n'
-	printf '<a href="/lists/">lists</a>&nbsp;&nbsp;\n'
-	printf '<a href="/about.html">about</a>\n'
+	printf '<a href="/posts/">blog</a>&nbsp;&nbsp;<a href="/lists/">lists</a>&nbsp;&nbsp;<a href="/about.html">about</a>\n'
 	printf '</span>'
 	printf '</nav>\n'
 	printf '</header>\n'
