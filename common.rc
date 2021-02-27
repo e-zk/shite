@@ -7,18 +7,20 @@
 # site metadata
 fqdn=zakaria.org
 base_url="https://${fqdn}"
-onion_url="http://g5hwwozzm3co43bu6np2noyhsju7zuok3cqawlbeo4entvfoads5trqd.onion/"
+onion_url="http://g5hwwozzm3co43bu6np2noyhsju7zuok3cqawlbeo4entvfoads5trqd.onion"
 site_name="zakaria's web log"
 
 # paths
-posts_dir="${HOME}/usr/src/www/blog/posts"
-posts_index=${posts_dir}/index.html
+site_root="${HOME}/usr/src/www/blog"
+html_dir="${site_root}/html"
+posts_dir=posts
+posts_index="${site_root}/${posts_dir}/index.html"
+
+# feed location
+rss_feed="${site_root}/rss.xml"
 
 # options for lowdown
 lowdown_opts='--html-no-escapehtml --html-no-skiphtml'
-
-# feed location
-rss_feed=rss.xml
 
 
 #
@@ -73,3 +75,76 @@ md_to_txt() {
 		-e 's/!\[(.+)\]\(.+\)/\[img "\1"\]/g' \
 	        -e 's/\[(.+)\]\(.+\)/\1/g'
 }
+
+# generate navigation/header
+gen_nav() {
+	printf '<header>\n'
+	printf '<nav>\n'
+	printf '<a href="%s">%s</a>\n' "/" "$fqdn"
+	cat "${html_dir}/nav"
+	printf '</nav>\n'
+	printf '</header>\n'
+}
+
+# generate page footer
+# $1 - page markdown file location
+gen_footer() {
+	page_file="$1"
+
+	page_path="${page_file#${site_root}/*}"
+	page_baseurl="${page_path%%.*}.html"
+
+	printf '<footer>\n'
+	printf '<a href="./%s">plaintext</a>&nbsp;&nbsp;' "$(basename "$page_file")"
+	printf '<a href="%s/%s">onion</a>\n'              "$onion_url" "$page_baseurl"
+	cat "${html_dir}/footer"
+	printf '</footer>\n'
+}
+
+# extract post description (for opengraph)
+# takes the first fourlines, removes titles and empty lines, then
+# strips markdown to make it plain text
+# $1 - markdown file
+gen_desc() {
+	post_file="$1"
+	head -n 4 "$post_file" | sed -e '/#.*/d' -e '/^$/d' | md_to_txt | sed -e 's/\ *$//' | cut -f 1-50 -d' ' | tr -d '\n'
+	printf '... [read more]'
+}
+
+# $1 - markdown file to generate head for
+# $2 - page title
+gen_head() {
+	page_file="$1"
+	page_title="$2"
+
+	#post_bname="$(basename "$page_file")"
+	#page_url="${base_url}/${posts_dir}/${post_bname%%.*}.html"
+	page_path="${page_file#${site_root}/*}"
+	page_url="${base_url}/${page_path%%.*}.html"
+	page_desc="$(gen_desc "$page_file")"
+
+	# START head
+	printf '<head>\n'
+
+	# static stuff is from the html/head file
+	#printf '<meta http-equiv="content-type" content="text/html; charset=utf-8">\n'
+	#printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+	#printf '<meta name="theme-color" content="#101010">\n'
+	#printf '<link rel="icon" href="/favicon.svg">\n'
+	#printf '<link rel="alternate icon" href="/favicon.ico">\n'
+	#printf '<link rel="stylesheet" href="/style.css">\n'
+	cat "${html_dir}/head"
+
+	# open graph tags
+	printf '<meta property="og:type" content="article">\n'
+	printf '<meta property="og:title" content="%s">\n'       "${page_title:-${site_name}}"
+	printf '<meta property="og:description" content="%s">\n' "${page_desc}"
+	printf '<meta property="og:url" content="%s">\n'         "$page_url"
+
+	# title
+	printf '<title>%s</title>\n' "$page_title"
+
+	# END head
+	printf '</head>\n'
+}
+
