@@ -1,12 +1,9 @@
  shite 
 =======
-
 /bin/sh site generator tools
-
 
  About 
 -------
-
 This is the successor to the shlog[^1] project, separating each of its
 main functions into serveral scripts:
 
@@ -20,15 +17,22 @@ are easier for _me_ to maintain without worrying about Linux compat,
 OS-specific edge cases, etc.
 
 These scripts have been tested on the latest OpenBSD-current and nothing else.
-
+At this stage, don't expect it to work anywhere else. It is what it claims to
+be; shite.
 
  Usage 
 -------
 
- 1. Configure file locations, site url and name in common.rc
- 2. Run update.sh to 'compile' markdown posts
- 3. Run index.sh to generate the post index page 
- 4. Run rss.sh to update the post rss feed
+Static HTML is stored in files located under the $html_dir:
+
+ * $html_dir/head.html   - the <head>
+ * $html_dir/nav.html    - additional site header content/navigation
+ * $html_dir/footer.html - additional page footer content
+ * $html_dir/pasts.html  - added to the beginning of the post list (this is
+                           only used on the $post_index page)
+
+With the exception of posts.html the content of these files are added to every
+generated page in their relevant places.
 
 ----
 
