@@ -46,7 +46,7 @@ remove_md() {
 reverse_posts() {
 	break=0
 	posts=''
-	for file in ${posts_dir}/*.html; do
+	for file in ${site_root}/${posts_dir}/*.html; do
 		base="$(basename "$file")"
 		for ex in ${exclude_fnames}; do
 			[ "$base" = "$ex" ] && break=1
