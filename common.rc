@@ -81,7 +81,7 @@ gen_nav() {
 	printf '<header>\n'
 	printf '<nav>\n'
 	printf '<a href="%s">%s</a>\n' "/" "$fqdn"
-	cat "${html_dir}/nav"
+	cat "${html_dir}/nav.html"
 	printf '</nav>\n'
 	printf '</header>\n'
 }
@@ -97,7 +97,7 @@ gen_footer() {
 	printf '<footer>\n'
 	printf '<a href="./%s">plaintext</a>&nbsp;&nbsp;' "$(basename "$page_file")"
 	printf '<a href="%s/%s">onion</a>\n'              "$onion_url" "$page_baseurl"
-	cat "${html_dir}/footer"
+	cat "${html_dir}/footer.html"
 	printf '</footer>\n'
 }
 
@@ -107,8 +107,10 @@ gen_footer() {
 # $1 - markdown file
 gen_desc() {
 	post_file="$1"
-	head -n 4 "$post_file" | sed -e '/#.*/d' -e '/^$/d' | md_to_txt | sed -e 's/\ *$//' | cut -f 1-50 -d' ' | tr -d '\n'
-	printf '... [read more]'
+	output="$(head -n 4 "$post_file" | sed -e '/#.*/d' -e '/^$/d' | md_to_txt | sed -e 's/\ *$//' | cut -f 1-50 -d' ' | tr -d '\n')"
+	if [ -n "$output" ]; then
+		printf '... [read more]'
+	fi
 }
 
 # $1 - markdown file to generate head for
@@ -133,7 +135,7 @@ gen_head() {
 	#printf '<link rel="icon" href="/favicon.svg">\n'
 	#printf '<link rel="alternate icon" href="/favicon.ico">\n'
 	#printf '<link rel="stylesheet" href="/style.css">\n'
-	cat "${html_dir}/head"
+	cat "${html_dir}/head.html"
 
 	# open graph tags
 	printf '<meta property="og:type" content="article">\n'
