@@ -54,10 +54,10 @@ gen_post() {
 	# add article itself
 	printf '%s\n'   "$post_content"
 
+	printf '</main>\n'
+
 	# generate page footer
 	gen_footer "$post_file"
-
-	printf '</main>\n'
 
 	# END body
 	printf '</body>\n'
