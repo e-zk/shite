@@ -1,5 +1,6 @@
  shite 
 =======
+
 /bin/sh site generator tools
 
  About 
@@ -11,14 +12,15 @@ main functions into serveral scripts:
  * rss.sh    - rss feed generation  
  * update.sh - convert new posts from markdown -> html  
  * index.sh  - generate post index (list of posts in chronological order)  
+ * shite     - simple script that wraps everything into one
 
 The main difference between these scripts and shlog is that these scripts
 are easier for _me_ to maintain without worrying about Linux compat,
 OS-specific edge cases, etc.
 
 These scripts have been tested on the latest OpenBSD-current and nothing else.
-At this stage, don't expect it to work anywhere else. It is what it claims to
-be; shite.
+At this stage, don't expect it to work anywhere else. Just know that it is
+what it claims to be; shite.
 
  Usage 
 -------

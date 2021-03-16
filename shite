@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# dir where shite is installed
+SHITEPATH="${SHITEPATH:-${HOME}/bin/shite/}"
+
+usage() {
+	cat <<EOF
+usage: $(basename $0) [update|index|page] [args ...]
+EOF
+}
+
+case "$1" in
+	"update")
+		shift
+		${SHITEPATH}/update.sh "$@"
+	;;
+	"index")
+		shift
+		${SHITEPATH}/index.sh "$@"
+	;;
+	"page")
+		shift
+		${SHITEPATH}/page.sh "$@"
+	;;
+	*)
+		echo "$(basename $0): `${1}' is a shite command, but not a shite command"
+		usage
+		exit 1
+	;;
+esac
