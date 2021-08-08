@@ -86,12 +86,17 @@ gen_post() {
 		done < "$post_meta"
 
 		# if exist, print opengraph tags
+		# shellcheck disable=SC2154
 		if [ -n "$post_title" ]; then
 			printf '<title>%s</title>\n' "$post_title"
 			printf '<meta property="og:title" content="%s">\n' "$post_title"
 		fi
+
+		# shellcheck disable=SC2154
 		[ -n "$post_description" ] \
 			&& printf '<meta property="og:description" content="%s">\n' "$post_description"
+
+		# shellcheck disable=SC2154
 		if [ -n "$post_image" ]; then
 			printf '<meta property="og:image" content="%s">\n' "$post_image"
 			printf '<meta property="twitter:image:src" content="%s">\n' "$post_image"
@@ -107,14 +112,15 @@ gen_post() {
 
 	# hero image
 	[ -n "$post_image" ] && printf '<img class="post-banner" src="%s"/>\n' "$post_image"
-	
+
+	# md -> html
 	lowdown -Thtml < "$post"
 
-	# if a post date is given, add it
+	# if a post date/title is given, add it to the end in an .info para
 	printf '<p class="info">'
 		[ -n "$post_title" ]       && printf '%s' "$post_title"
+		# shellcheck disable=SC2154
 		[ -n "$post_date" ]        && printf ' &bullet; %s' "$post_date"
-	#	[ -n "$post_description" ] && printf ' &bullet; %s' "$post_description"
 	printf '</p>\n'
 
 	printf '</main>\n'
