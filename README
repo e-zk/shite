@@ -1,6 +1,5 @@
  shite 
 =======
-
 /bin/sh site generator tools
 
  About 
@@ -8,33 +7,19 @@
 This is the successor to the shlog[^1] project, separating each of its
 main functions into serveral scripts:
 
- * common.rc - houses common script functions and variables  
  * rss.sh    - rss feed generation  
- * update.sh - convert new posts from markdown -> html  
  * index.sh  - generate post index (list of posts in chronological order)  
  * shite     - simple script that wraps everything into one
 
-The main difference between these scripts and shlog is that these scripts
-are easier for _me_ to maintain without worrying about Linux compat,
-OS-specific edge cases, etc.
+All scripts source a .env file in the current directory. It is assumed all
+scripts are run at the root of the static site heirachy.
 
-These scripts have been tested on the latest OpenBSD-current and nothing else.
-At this stage, don't expect it to work anywhere else. Just know that it is
-what it claims to be; shite.
+These scripts have been tested on the latest OpenBSD-current and the latest
+Ubuntu on WSL2.
 
  Usage 
 -------
-
-Static HTML is stored in files located under the $html_dir:
-
- * $html_dir/head.html   - the <head>
- * $html_dir/nav.html    - additional site header content/navigation
- * $html_dir/footer.html - additional page footer content
- * $html_dir/pasts.html  - added to the beginning of the post list (this is
-                           only used on the $post_index page)
-
-With the exception of posts.html the content of these files are added to every
-generated page in their relevant places.
+Soon™
 
 ----
 

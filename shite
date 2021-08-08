@@ -1,30 +1,151 @@
 #!/bin/sh
+set -e
 
-# dir where shite is installed
-SHITEPATH="${SHITEPATH:-${HOME}/bin/shite/}"
+env="${1:-./.env}"
+# shellcheck source=./.env.template
+. "$env"
 
-usage() {
-	cat <<EOF
-usage: $(basename $0) [update|index|page] [args ...]
-EOF
+onion="${onion}"
+
+exclude_files="${exclude_files}"
+meta_ext="${meta_ext:-.meta}"
+site_root="${site_root}"
+html_dir="${html_dir:-html}"
+post_dir="${post_dir:-posts}"
+
+log() {
+	printf 'shite: [%s] %s\n' "$1" "$2" >&2
+}
+info() {
+	log "$(printf '\033[32minfo\033[0m')" "$1"
+}
+warn() {
+	log "$(printf '\033[33mwarn\033[0m')" "$1"
+}
+error() {
+	log "$(printf '\033[31merror\033[0m')" "$1"
+}
+die() {
+	error "$1"
+	printf 'exiting...\n' >&2
+	exit 1
 }
 
-case "$1" in
-	"update")
-		shift
-		${SHITEPATH}/update.sh "$@"
-	;;
-	"index")
-		shift
-		${SHITEPATH}/index.sh "$@"
-	;;
-	"page")
-		shift
-		${SHITEPATH}/page.sh "$@"
-	;;
-	*)
-		echo "$(basename $0): `${1}' is a shite command, but not a shite command"
-		usage
-		exit 1
-	;;
-esac
+gen_header() {
+	printf '<header>\n'
+	printf '<nav>\n'
+	if [ -f "${site_root}/${html_dir}/header.html" ]; then
+		cat "${site_root}/${html_dir}/header.html"
+	else
+		warn "header_content file 'header.html' does not exist."
+	fi
+	printf '</nav>\n'
+	printf '</header>\n'
+}
+
+gen_foot() {
+	post="$1"
+	post_html="${post%.*}.html"
+	post_bname="${post#*${site_root}}"
+	post_url="${post_html#*${site_root}}"
+
+	printf '<footer>\n'
+	printf '<a href="%s">plaintext</a>&nbsp;&nbsp;' ".${post_bname#*/${post_dir}}"
+	[ -n "$onion" ] \
+		&& printf '<a href="%s%s">onion</a>\n' "${onion}" "${post_url#*${site_root}}"
+	cat "${site_root}/${html_dir}/footer.html"
+	printf '</footer>\n'
+}
+
+gen_post() {
+	post="$1"
+	post_html="${post%.*}.html"
+	post_meta="${post%.*}${meta_ext}"
+	post_url="${post_html#*${site_root}}"
+	
+	printf '<!DOCTYPE html>\n'
+	printf '<html lang="en">\n'
+	printf '<head>\n'
+
+	# cat static head tags
+	cat "${site_root}/${html_dir}/head.html"
+
+	# if an onion was specified add the onion tag
+	[ -n "$onion" ] \
+		&& printf '<meta http-equiv="onion-location" content="%s%s">\n' "$onion" "$post_url"
+
+	# parse metadata if .meta file exists
+	if [ -f "$post_meta" ]; then
+
+		# read the 'key: value' .meta file
+		while IFS=': ' read -r key val; do
+			[ "${key##\#*}" ] || continue
+			# export each key as a variable; '$post_<key>'
+			export "post_${key}=${val}" 2>/dev/null || \
+				warn "'${key}' is not a valid meta tag name"
+		done < "$post_meta"
+
+		# if exist, print opengraph tags
+		if [ -n "$post_title" ]; then
+			printf '<title>%s</title>\n' "$post_title"
+			printf '<meta property="og:title" content="%s">\n' "$post_title"
+		fi
+		[ -n "$post_description" ] \
+			&& printf '<meta property="og:description" content="%s">\n' "$post_description"
+		if [ -n "$post_image" ]; then
+			printf '<meta property="og:image" content="%s">\n' "$post_image"
+			printf '<meta property="twitter:image:src" content="%s">\n' "$post_image"
+		fi
+	else
+		info "no ${meta_ext} - skipping metadata parsing"
+	fi
+
+	printf '</head>\n'
+	printf '<body>\n'
+	gen_header
+	printf '<main>\n'
+
+	# hero image
+	[ -n "$post_image" ] && printf '<img class="post-banner" src="%s"/>\n' "$post_image"
+	
+	lowdown -Thtml < "$post"
+
+	# if a post date is given, add it
+	printf '<p class="info">'
+		[ -n "$post_title" ]       && printf '%s' "$post_title"
+		[ -n "$post_date" ]        && printf ' &bullet; %s' "$post_date"
+	#	[ -n "$post_description" ] && printf ' &bullet; %s' "$post_description"
+	printf '</p>\n'
+
+	printf '</main>\n'
+
+	gen_foot "$post"
+
+	printf '</body>\n'
+
+	printf '</html>\n'
+
+	unset post_date
+	unset post_title
+	unset post_image
+	unset post_description
+}
+
+find "${site_root}" -name '*.md' | while read -r post; do
+	post_html="${post%.*}.html"
+
+	excluded=0
+	for ex in $exclude_files; do
+		if [ "$(basename "$post")" = "$ex" ]; then
+			excluded=1
+		fi
+	done
+
+	if [ "$excluded" -eq 1 ]; then
+		warn "${post} excluded"
+		continue
+	fi
+
+	info "compiling ${post}..."
+	gen_post "$post" > "$post_html"
+done

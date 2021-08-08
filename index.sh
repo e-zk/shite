@@ -1,61 +1,116 @@
 #!/bin/sh
+set -e
 
-. ${XDG_CONFIG_HOME:-${HOME}/.config}/shite/common.rc
+env="${1:-./.env}"
+# shellcheck source=./.env.template
+. "$env"
 
+exclude_files="${exclude_files}"
+meta_ext="${meta_ext:-.meta}"
+site_root="${site_root}"
+html_dir="${html_dir:-html}"
+post_dir="${post_dir:-posts}"
 
-# retreive list of posts in reverse chronological order
-# TODO: this might out output stuff in the proper order every time
-get_posts() {
-	for post in ${site_root}/${posts_dir}/*.html; do
-		if is_excluded "$(basename "$post")"; then
-			continue
-		fi
-		echo "$post"
-	done | tail -r
+log() {
+	printf 'shite: [%s] %s\n' "$1" "$2" >&2
+}
+info() {
+	log "$(printf '\033[32minfo\033[0m')" "$1"
+}
+warn() {
+	log "$(printf '\033[33mwarn\033[0m')" "$1"
+}
+error() {
+	log "$(printf '\033[31merror\033[0m')" "$1"
+}
+die() {
+	error "$1"
+	printf 'exiting...\n' >&2
+	exit 1
+}
+
+gen_header() {
+	printf '<header>\n'
+	printf '<nav>\n'
+	if [ -f "${site_root}/${html_dir}/header.html" ]; then
+		cat "${site_root}/${html_dir}/header.html"
+	else
+		warn "header_content file 'header.html' does not exist."
+	fi
+	printf '</nav>\n'
+	printf '</header>\n'
+}
+gen_index_head() {
+	cat "${html_dir}/index_head.html"
+}
+gen_index_tail() {
+	cat "${html_dir}/index_tail.html"
 }
 
 gen_index() {
-	# START html
-	printf '<!DOCTYPE html>\n'
-	printf '<html lang="en">\n'
+	find "${site_root}/${post_dir}/" -name '*.md' | while read -r post; do
+		post_html="${post%.*}.html"
+		post_meta="${post%.*}${meta_ext}"
+		post_url="/posts/$(basename "$post_html")"
 
-	# generate the head
-	gen_head "$post_file" "${site_name}"
-
-	# START body
-	printf '<body>\n'
-
-	# generate navigation
-	gen_nav
-
-	printf '<main>\n'
-
-	# print stuff
-	cat "${html_dir}/posts.html"
-
-	# list posts
-	printf '<ul class="postslist">\n'
-	for post in $(get_posts); do
-		log "adding "$post" to index..."
-
-		post_md="${post%%.*}.md"
-		post_url="$(basename "$post")"
-		date_parsed="$(parse_fname "$post_url")"
-		post_title="$(md_title "$post_md" | md_to_txt)"
-		post_date="${date_parsed%%:*}"
-
-		printf '<li>\n'
-		printf '<a href="%s"><span class="right postdate">%s</span>%s</a>\n' "$post_url" "$post_date" "$post_title"
-		printf '</li>\n'
+		excluded=0
+		for ex in $exclude_files; do
+			if [ "$(basename "$post")" = "$ex" ]; then
+				excluded=1
+			fi
+		done
+	
+		if [ "$excluded" -eq 1 ]; then
+			warn "${post} excluded"
+			continue
+		fi
+	
+		# parse metadata if .meta file exists
+		if [ -f "$post_meta" ]; then
+			# read the 'key: value' .meta file
+			while IFS=': ' read -r key val; do
+				[ "${key##\#*}" ] || continue
+				# export each key as a variable; '$post_<key>'
+				export "post_${key}=${val}" 2>/dev/null || \
+					warn "'${key}' is not a valid meta tag name"
+			done < "$post_meta"
+		else
+			warn "no ${meta_ext} - skipping metadata parsing"
+		fi
+	
+		echo "${post_date}|${post_title}|${post_url}" >> index.meta
+	
+		unset post_date
+		unset post_title
+		unset post_image
+		unset post_description
+		unset post_url
 	done
-	printf '</ul>\n'
-	printf '</main>\n'
-
-	# END body
+	
+	printf '<!DOCTYPE html>\n'
+	printf '<html>\n'
+	printf '<head>\n'
+	printf "<title>zakaria's web log</title>\n"
+	cat "${html_dir}/head.html"
+	printf "<meta property=\"og:title\" content=\"zakaria's web log\">\n"
+	printf '</head>\n'
+	printf '<body>\n'
+	gen_header
+	gen_index_head
+	sort -r index.meta | while IFS='|' read -r post_date post_title post_url; do
+		printf '<p class="postitem"><a href="%s"><span class="postdate">%s</span>%s</a></p>\n' "$post_url" "$post_date" "$post_title"
+	done
+	gen_index_tail
 	printf '</body>\n'
-
-	# END html
 	printf '</html>\n'
 }
 
-gen_index > "$posts_index"
+if [ -f "./index.meta" ]; then
+	log 'old index.meta file found. remove?'
+	rm -i "./index.meta"
+fi
+
+gen_index > "${site_root}/${post_dir}/index.html"
+
+# remove index tempfile
+rm -i index.meta
