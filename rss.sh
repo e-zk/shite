@@ -1,13 +1,39 @@
 #!/bin/sh
-# rss feed generator
 
+env="${1:-./.env}"
+# shellcheck source=./.env.template
+. "$env"
 
-. ${XDG_CONFIG_HOME:-${HOME}/.config}/shite/common.rc
+exclude_files="${exclude_files}"
+meta_ext="${meta_ext:-.meta}"
+site_root="${site_root}"
+html_dir="${html_dir:-html}"
+post_dir="${post_dir:-posts}"
 
-exclude_fnames="${exclude_fnames:-index.html index.md}"
-rss_baseurl="${base_url}/"
-rss_title="${site_name}"
-rss_link="${base_url}/posts/"
+rss_root="${rss_root}"
+rss_title="${rss_title}"
+rss_description="${rss_description}"
+rss_link="${rss_link}"
+
+rss_site_root="https://zakaria.org"
+
+log() {
+	printf 'shite: [%s] %s\n' "$1" "$2" >&2
+}
+info() {
+	log "$(printf '\033[32minfo\033[0m')" "$1"
+}
+warn() {
+	log "$(printf '\033[33mwarn\033[0m')" "$1"
+}
+error() {
+	log "$(printf '\033[31merror\033[0m')" "$1"
+}
+die() {
+	error "$1"
+	printf 'exiting...\n' >&2
+	exit 1
+}
 
 # convert input date to RFC2822
 # time and tz are set to 00:00:00 +0000
@@ -26,10 +52,16 @@ to_rfc2822() {
 }
 
 rss_preamble() {
-	printf '<rss version="2.0" xml:base="%s">\n' "$rss_baseurl"
+	printf '<rss version="2.0" xml:base="%s">\n' "$rss_root"
 	printf '<channel>\n'
 	printf '<title>%s</title>\n' "$rss_title"
-	printf '<description/>\n' # TODO add description?
+	if [ -n "$rss_description" ]; then
+		printf '<description>\n'
+		printf '%s\n' "$rss_description"
+		printf '</description>\n'
+	else
+		printf '<description/>\n'
+	fi
 	printf '<link>%s</link>\n' "$rss_link"
 }
 
@@ -43,39 +75,62 @@ remove_md() {
 	sed 's/`//g'
 }
 
-reverse_posts() {
-	break=0
-	posts=''
-	for file in ${site_root}/${posts_dir}/*.html; do
-		base="$(basename "$file")"
-		for ex in ${exclude_fnames}; do
-			[ "$base" = "$ex" ] && break=1
+gen_rss() {
+	find "${site_root}/${post_dir}/" -name '*.md' | while read -r post; do
+		post_html="${post%.*}.html"
+		post_meta="${post%.*}${meta_ext}"
+		post_url="/posts/$(basename "$post_html")"
+
+		excluded=0
+		for ex in $exclude_files; do
+			if [ "$(basename "$post")" = "$ex" ]; then
+				excluded=1
+			fi
 		done
-		[ "$break" -eq 1 ] && continue
-		posts="${posts}\\n${file}"
+	
+		if [ "$excluded" -eq 1 ]; then
+			warn "${post} excluded"
+			continue
+		fi
+
+		# parse metadata if .meta file exists
+		if [ -f "$post_meta" ]; then
+			# read the 'key: value' .meta file
+			while IFS=': ' read -r key val; do
+				[ "${key##\#*}" ] || continue
+				# export each key as a variable; '$post_<key>'
+				export "post_${key}=${val}" 2>/dev/null || \
+					warn "'${key}' is not a valid meta tag name"
+			done < "$post_meta"
+		else
+			warn "no ${meta_ext} - skipping metadata parsing"
+		fi
+	
+		echo "${post_date}|${post_title}|${post_url}|${post}" >> rss.meta
+
+		unset post_date
+		unset post_title
+		unset post_image
+		unset post_description
+		unset post_url
 	done
-	echo "$posts" | tail -r
+
+	rss_preamble
+	sort -r rss.meta | while IFS='|' read -r post_date post_title post_url post_md; do
+		#printf '<p class="postitem"><a href="%s"><span class="postdate">%s</span>%s</a></p>\n' "$post_url" "$post_date" "$post_title"
+		[ -z "$post_date" ] && continue
+		rfcdate="$(to_rfc2822 "$post_date")"
+		printf '<item>\n'
+		printf '<link>%s%s</link>\n' "$rss_site_root" "$post_url"
+		printf '<title>%s</title>\n' "$post_title"
+		printf '<pubDate>%s</pubDate>\n' "$rfcdate"
+		printf '<description>\n'
+		lowdown -Thtml < "$post_md"
+		printf '</description>\n'
+		printf '</item>\n'
+	done
+	rss_postamble
 }
 
-rss_preamble
-for file in $(reverse_posts); do
-	post_bname="$(basename "$file")"
-	md="${file%%.*}.md"
-
-	parsed="$(parse_fname "$post_bname")"
-
-	post_date="$(to_rfc2822 "${parsed%%:*}")"
-	post_title="$(md_title "$md" | remove_md)"
-
-	log "adding \"${post_title}\" @ ${post_date}..."
-
-	printf '<item>\n'
-	printf '<link>%s/posts/%s</link>\n' "$base_url" "$post_bname"
-	printf '<title>%s</title>\n' "$post_title"
-	printf '<pubDate>%s</pubDate>\n' "$post_date"
-	printf '<description>\n'
-	lowdown ${lowdown_opts} "$md"
-	printf '</description>\n'
-	printf '</item>\n'
-done
-rss_postamble
+gen_rss
+rm -i rss.meta
