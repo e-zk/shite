@@ -15,8 +15,6 @@ rss_title="${rss_title}"
 rss_description="${rss_description}"
 rss_link="${rss_link}"
 
-rss_site_root="https://zakaria.org"
-
 log() {
 	printf 'shite: [%s] %s\n' "$1" "$2" >&2
 }
@@ -70,11 +68,6 @@ rss_postamble() {
 	printf '</rss>\n'
 }
 
-# remove markdown from title
-remove_md() {
-	sed 's/`//g'
-}
-
 gen_rss() {
 	find "${site_root}/${post_dir}/" -name '*.md' | while read -r post; do
 		post_html="${post%.*}.html"
@@ -117,11 +110,10 @@ gen_rss() {
 
 	rss_preamble
 	sort -r rss.meta | while IFS='|' read -r post_date post_title post_url post_md; do
-		#printf '<p class="postitem"><a href="%s"><span class="postdate">%s</span>%s</a></p>\n' "$post_url" "$post_date" "$post_title"
 		[ -z "$post_date" ] && continue
 		rfcdate="$(to_rfc2822 "$post_date")"
 		printf '<item>\n'
-		printf '<link>%s%s</link>\n' "$rss_site_root" "$post_url"
+		printf '<link>%s%s</link>\n' "$rss_root" "$post_url"
 		printf '<title>%s</title>\n' "$post_title"
 		printf '<pubDate>%s</pubDate>\n' "$rfcdate"
 		printf '<description>\n'
