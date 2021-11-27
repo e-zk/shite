@@ -1,27 +1,49 @@
  shite 
 =======
-/bin/sh site generator tools
+site generator tools in /bin/sh.
+
+ Dependencies
+--------------
+shite depends on the lowdown[^0] Markdown 'translator' to convert Markdown
+into HTML. If your OS is POSIX-compliant out of the box, this is the only
+program you will need to install.
+
+ * lowdown
+ * find
+ * a POSIX-compliant /bin/sh
 
  About 
 -------
-This is the successor to the shlog[^1] project, separating each of its
+shite is the successor to the shlog[^1] project, separating each of its
 main functions into serveral scripts:
 
  * rss.sh    - rss feed generation  
  * index.sh  - generate post index (list of posts in chronological order)  
  * shite     - simple script that wraps everything into one
 
-All scripts source a .env file in the current directory. It is assumed all
-scripts are run at the root of the static site heirachy.
+All scripts source a .env file in the current directory. For an template see
+.env.template. It is assumed all scripts are run at the root of the static
+site heirachy.
 
 These scripts have been tested on the latest OpenBSD-current and the latest
 Ubuntu on WSL2.
 
  Usage 
 -------
-Soon™
+
+ 1. Copy .env.template to the root of your static site as ./.env
+ 2. Edit .env to your specifications
+ 3. Populate $html_dir with:
+    - footer.html     - footer content
+    - head.html       - <head> content
+    - header.html     - header/nav content
+    - index_head.html - post index prefix
+      This is placed before posts are listed
+    - index_tail.html - post index postfix
+      This is placed after posts are listed
 
 ----
 
+[^0]: https://kristaps.bsd.lv/lowdown/
 [^1]: https://github.com/e-zk/shlog
 
