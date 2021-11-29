@@ -61,7 +61,7 @@ gen_foot() {
 		printf '%s&nbsp;&sdot;&nbsp;' "$post_date"
 	fi
 
-	printf '<a href="%s">Plaintext</a>' ".${post_bname#*/${post_dir}}"
+	printf '<a href="%s">Plaintext</a>' "${post_bname#*/${site_root}}"
 
 	if [ -n "$onion" ]; then
 		printf '&nbsp;&sdot;&nbsp;'
@@ -132,19 +132,9 @@ gen_post() {
 	# md -> html
 	lowdown -Thtml < "$post"
 
-	# if a post date/title is given, add it to the end in an .info para
-	#printf '<p class="info">'
-	#	[ -n "$post_title" ]       && printf '%s' "$post_title"
-	#	# shellcheck disable=SC2154
-	#	[ -n "$post_date" ]        && printf ' &bullet; %s' "$post_date"
-	#printf '</p>\n'
-
 	printf '</main>\n'
-
 	gen_foot "$post" "$post_title" "$post_date"
-
 	printf '</body>\n'
-
 	printf '</html>\n'
 
 	unset post_date
