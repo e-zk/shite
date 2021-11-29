@@ -45,15 +45,31 @@ gen_header() {
 
 gen_foot() {
 	post="$1"
+	post_title="$2"
+	post_date="$3"
 	post_html="${post%.*}.html"
 	post_bname="${post#*${site_root}}"
 	post_url="${post_html#*${site_root}}"
 
 	printf '<footer>\n'
-	printf '<a href="%s">plaintext</a>&nbsp;&nbsp;' ".${post_bname#*/${post_dir}}"
-	[ -n "$onion" ] \
-		&& printf '<a href="%s%s">onion</a>\n' "${onion}" "${post_url#*${site_root}}"
+
+	if [ -n "$post_title" ]; then
+		printf '%s&nbsp;&sdot;&nbsp;' "$post_title"
+	fi
+
+	if [ -n "$post_date" ]; then
+		printf '%s&nbsp;&sdot;&nbsp;' "$post_date"
+	fi
+
+	printf '<a href="%s">Plaintext</a>' ".${post_bname#*/${post_dir}}"
+
+	if [ -n "$onion" ]; then
+		printf '&nbsp;&sdot;&nbsp;'
+		printf '<a href="%s%s" title="Tor">Onion</a>' "${onion}" "${post_url#*${site_root}}"
+	fi
+
 	cat "${site_root}/${html_dir}/footer.html"
+	
 	printf '</footer>\n'
 }
 
@@ -117,15 +133,15 @@ gen_post() {
 	lowdown -Thtml < "$post"
 
 	# if a post date/title is given, add it to the end in an .info para
-	printf '<p class="info">'
-		[ -n "$post_title" ]       && printf '%s' "$post_title"
-		# shellcheck disable=SC2154
-		[ -n "$post_date" ]        && printf ' &bullet; %s' "$post_date"
-	printf '</p>\n'
+	#printf '<p class="info">'
+	#	[ -n "$post_title" ]       && printf '%s' "$post_title"
+	#	# shellcheck disable=SC2154
+	#	[ -n "$post_date" ]        && printf ' &bullet; %s' "$post_date"
+	#printf '</p>\n'
 
 	printf '</main>\n'
 
-	gen_foot "$post"
+	gen_foot "$post" "$post_title" "$post_date"
 
 	printf '</body>\n'
 
