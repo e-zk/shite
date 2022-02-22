@@ -17,13 +17,13 @@ program you will need to install.
 shite is the successor to the shlog[^1] project, separating each of its
 main functions into serveral scripts:
 
- * rss.sh    - rss feed generation  
- * index.sh  - generate post index (list of posts in chronological order)  
- * shite     - simple script that wraps everything into one
+ * rss.sh    - generates rss feed of posts  
+ * index.sh  - generates a html page listing posts in chronological order
+ * shite     - finds and converts html -> markdown
 
 All scripts source a .env file in the current directory. For an template see
 .env.template. It is assumed all scripts are run at the root of the static
-site heirachy.
+site's heirachy.
 
 These scripts have been tested on the latest OpenBSD-current and the latest
 Ubuntu on WSL2.
